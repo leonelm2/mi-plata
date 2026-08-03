@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   Moon, Sun, DollarSign, Download,
-  Camera, Check, Pencil,
+  Camera, Check, Pencil, LogOut
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../context/ToastContext';
@@ -17,7 +17,7 @@ const CURRENCIES = [
 ];
 
 export default function ProfilePage() {
-  const { profile, updateProfile, theme, toggleTheme, transactions } = useApp();
+  const { profile, updateProfile, theme, toggleTheme, transactions, logout } = useApp();
   const { showToast } = useToast();
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(profile.nombre);
@@ -198,6 +198,21 @@ export default function ProfilePage() {
             <div className="text-left">
               <p className="text-sm font-medium text-slate-800 dark:text-slate-100">Exportar datos</p>
               <p className="text-xs text-slate-500 dark:text-slate-400">Descarga CSV con todos tus movimientos</p>
+            </div>
+          </button>
+
+          {/* Logout */}
+          <button
+            onClick={() => {
+              logout();
+              showToast('Sesión cerrada ✓', 'info');
+            }}
+            className="flex items-center gap-3 p-4 w-full hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 dark:text-rose-400 transition-colors"
+          >
+            <LogOut size={20} />
+            <div className="text-left">
+              <p className="text-sm font-medium">Cerrar sesión</p>
+              <p className="text-xs text-rose-500/80 dark:text-rose-400/70">Salir de tu cuenta en este dispositivo</p>
             </div>
           </button>
         </div>

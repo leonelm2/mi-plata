@@ -3,6 +3,8 @@ import { AppProvider } from './context/AppContext';
 import { ToastProvider } from './context/ToastContext';
 import { AppLayout } from './components/layout/AppLayout';
 import { ScrollToTop } from './components/shared/ScrollToTop';
+import { ProtectedRoute } from './components/shared/ProtectedRoute';
+import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import AddTransactionPage from './pages/AddTransactionPage';
 import TransactionsPage from './pages/TransactionsPage';
@@ -16,12 +18,15 @@ export default function App() {
       <ToastProvider>
         <AppProvider>
           <Routes>
-            <Route element={<AppLayout />}>
-              <Route path="/" element={<DashboardPage />} />
-              <Route path="/agregar" element={<AddTransactionPage />} />
-              <Route path="/historial" element={<TransactionsPage />} />
-              <Route path="/estadisticas" element={<StatsPage />} />
-              <Route path="/perfil" element={<ProfilePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route element={<ProtectedRoute />}>
+              <Route element={<AppLayout />}>
+                <Route path="/" element={<DashboardPage />} />
+                <Route path="/agregar" element={<AddTransactionPage />} />
+                <Route path="/historial" element={<TransactionsPage />} />
+                <Route path="/estadisticas" element={<StatsPage />} />
+                <Route path="/perfil" element={<ProfilePage />} />
+              </Route>
             </Route>
           </Routes>
         </AppProvider>

@@ -2,6 +2,7 @@ import { createContext, useContext } from 'react';
 import { useTransactions } from '../hooks/useTransactions';
 import { useProfile } from '../hooks/useProfile';
 import { useTheme } from '../hooks/useTheme';
+import { useAuth } from '../hooks/useAuth';
 import type { Transaction, Profile } from '../types';
 
 interface AppContextType {
@@ -13,6 +14,10 @@ interface AppContextType {
   updateProfile: (updates: Partial<Profile>) => void;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
+  isAuthenticated: boolean;
+  userEmail: string | null;
+  login: (email: string) => void;
+  logout: () => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -21,6 +26,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const { transactions, addTransaction, updateTransaction, deleteTransaction } = useTransactions();
   const { profile, updateProfile } = useProfile();
   const { theme, toggleTheme } = useTheme();
+  const { isAuthenticated, userEmail, login, logout } = useAuth();
 
   return (
     <AppContext.Provider
@@ -33,6 +39,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updateProfile,
         theme,
         toggleTheme,
+        isAuthenticated,
+        userEmail,
+        login,
+        logout,
       }}
     >
       {children}
