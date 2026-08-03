@@ -151,15 +151,16 @@ export default function ProfilePage() {
             </div>
             <button
               onClick={toggleTheme}
+              aria-label="Cambiar tema"
               className={cn(
-                'w-12 h-6 rounded-full transition-all duration-300 relative',
-                theme === 'dark' ? 'bg-brand-500' : 'bg-slate-200 dark:bg-slate-700'
+                'w-12 h-6 rounded-full transition-all duration-300 relative focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2',
+                theme === 'dark' ? 'bg-brand-500' : 'bg-slate-400'
               )}
             >
               <div
                 className={cn(
-                  'absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all duration-300',
-                  theme === 'dark' ? 'left-6' : 'left-0.5'
+                  'absolute top-0.5 w-5 h-5 rounded-full shadow-md transition-all duration-300',
+                  theme === 'dark' ? 'left-6 bg-white' : 'left-0.5 bg-white'
                 )}
               />
             </button>
@@ -202,7 +203,7 @@ export default function ProfilePage() {
         </div>
 
         {/* App info */}
-        <div className="text-center text-xs text-slate-300 dark:text-slate-700 py-4">
+        <div className="text-center text-xs text-slate-400 dark:text-slate-600 py-4">
           Mi Plata v1.0 · Hecho con ❤️
         </div>
       </div>
