@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { useTransactions } from '../hooks/useTransactions';
 import { useProfile } from '../hooks/useProfile';
 import { useTheme } from '../hooks/useTheme';
@@ -18,6 +18,8 @@ interface AppContextType {
   userEmail: string | null;
   login: (email: string) => void;
   logout: () => void;
+  isAddModalOpen: boolean;
+  setAddModalOpen: (open: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -27,6 +29,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const { profile, updateProfile } = useProfile();
   const { theme, toggleTheme } = useTheme();
   const { isAuthenticated, userEmail, login, logout } = useAuth();
+  const [isAddModalOpen, setAddModalOpen] = useState(false);
 
   return (
     <AppContext.Provider
@@ -43,6 +46,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         userEmail,
         login,
         logout,
+        isAddModalOpen,
+        setAddModalOpen,
       }}
     >
       {children}

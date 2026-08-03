@@ -29,7 +29,7 @@ function calcMonthSummary(txs: Transaction[], ym: string) {
 }
 
 export default function DashboardPage() {
-  const { transactions, profile } = useApp();
+  const { transactions, profile, setAddModalOpen } = useApp();
   const currency = profile.moneda;
   const currYM = currentYearMonth();
   const prevYM = previousYearMonth();
@@ -420,9 +420,9 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* ── Mobile Floating Action Button (FAB) ─────────── */}
-      <Link
-        to="/agregar"
+      {/* Mobile Floating Action Button (FAB) */}
+      <button
+        onClick={() => setAddModalOpen(true)}
         className="md:hidden fixed bottom-20 right-5 z-30 w-14 h-14 rounded-full
                    bg-emerald-600 hover:bg-emerald-500 text-white
                    flex items-center justify-center shadow-lg shadow-emerald-600/30
@@ -430,7 +430,7 @@ export default function DashboardPage() {
         aria-label="Agregar movimiento"
       >
         <Plus size={28} />
-      </Link>
+      </button>
     </div>
   );
 }
