@@ -18,7 +18,7 @@ const NAV_ITEMS = [
 export function BottomNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 flex items-center justify-around px-2 py-2 md:hidden safe-area-pb shadow-lg">
-      {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+      {NAV_ITEMS.map(({ to, label, icon: Icon }, index) => (
         <NavLink
           key={to}
           to={to}
@@ -46,6 +46,14 @@ export function BottomNav() {
           )}
         </NavLink>
       ))}
+      
+      {/* Floating add button in the center */}
+      <NavLink
+        to="/agregar"
+        className="absolute -top-6 left-1/2 -translate-x-1/2 bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform duration-200 hover:scale-105 active:scale-95"
+      >
+        <PlusCircle size={28} className="stroke-[2.5px]" />
+      </NavLink>
     </nav>
   );
 }
