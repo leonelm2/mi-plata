@@ -48,4 +48,9 @@ export const SEED_PROFILE = {
   email: 'lionel@miplata.app',
   foto_url: '',
   moneda: 'ARS',
+  modo_uso: 'presupuesto' as const,
+  presupuesto_inicial: 500000,
+  fecha_inicio_presupuesto: '2026-08-01',
+  dia_reinicio_presupuesto: 1,
+  onboarding_completado: false,
 };

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   Moon, Sun, DollarSign, Download,
-  Camera, Check, Pencil, LogOut
+  Camera, Check, Pencil, LogOut, Wallet
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../context/ToastContext';
@@ -164,6 +164,68 @@ export default function ProfilePage() {
                 )}
               />
             </button>
+          </div>
+
+          {/* Modo de uso */}
+          <div className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Wallet size={20} className="text-emerald-500" />
+                <div>
+                  <p className="text-sm font-medium text-slate-800 dark:text-slate-100">Modo de uso</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {profile.modo_uso === 'presupuesto' ? '💰 Controlar presupuesto' : '📊 Solo movimientos'}
+                  </p>
+                </div>
+              </div>
+              <select
+                value={profile.modo_uso || 'presupuesto'}
+                onChange={(e) => {
+                  const newMode = e.target.value as 'presupuesto' | 'movimientos';
+                  if (newMode === 'presupuesto' && (!profile.presupuesto_inicial || profile.presupuesto_inicial <= 0)) {
+                    updateProfile({ modo_uso: 'presupuesto', presupuesto_inicial: 300000 });
+                  } else {
+                    updateProfile({ modo_uso: newMode });
+                  }
+                  showToast(`Modo cambiado a ${newMode === 'presupuesto' ? 'Presupuesto' : 'Solo Movimientos'} ✓`, 'success');
+                }}
+                className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border-none focus:outline-none cursor-pointer"
+              >
+                <option value="presupuesto">💰 Presupuesto</option>
+                <option value="movimientos">📊 Solo Movimientos</option>
+              </select>
+            </div>
+
+            {/* Presupuesto Config sub-fields if mode is presupuesto */}
+            {profile.modo_uso === 'presupuesto' && (
+              <div className="pt-2 pl-8 grid grid-cols-1 sm:grid-cols-2 gap-3 animate-fade-in">
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 block mb-1">
+                    Presupuesto inicial
+                  </label>
+                  <input
+                    type="number"
+                    value={profile.presupuesto_inicial || ''}
+                    onChange={(e) => updateProfile({ presupuesto_inicial: Number(e.target.value) })}
+                    className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold text-slate-800 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 block mb-1">
+                    Día reinicio
+                  </label>
+                  <select
+                    value={profile.dia_reinicio_presupuesto || 1}
+                    onChange={(e) => updateProfile({ dia_reinicio_presupuesto: Number(e.target.value) })}
+                    className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white font-medium"
+                  >
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                      <option key={d} value={d}>Día {d} de cada mes</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Currency */}

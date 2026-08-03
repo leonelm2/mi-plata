@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Wallet, ArrowUpRight, ArrowDownRight, ArrowRight, Sparkles, TrendingUp } from 'lucide-react';
+import { Plus, Wallet, ArrowUpRight, ArrowDownRight, ArrowRight, Sparkles, TrendingUp, Calendar, Zap } from 'lucide-react';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { useApp } from '../context/AppContext';
+import { OnboardingModal } from '../components/shared/OnboardingModal';
 import {
   formatCurrency, formatDateShort,
   currentYearMonth, previousYearMonth
@@ -33,9 +34,47 @@ export default function DashboardPage() {
   const currYM = currentYearMonth();
   const prevYM = previousYearMonth();
 
+  // Onboarding modal visibility state
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(!profile.onboarding_completado);
+
+  const mode = profile.modo_uso || 'presupuesto';
+
   const { ingresos, gastos } = useMemo(() => calcMonthSummary(transactions, currYM), [transactions, currYM]);
   const prevMonth = useMemo(() => calcMonthSummary(transactions, prevYM), [transactions, prevYM]);
   const balance = ingresos - gastos;
+
+  // ── Budget calculations (Presupuesto Mode) ──────────────────────────────────
+  const budgetMetrics = useMemo(() => {
+    if (mode !== 'presupuesto') return null;
+
+    const initialBudget = profile.presupuesto_inicial || 0;
+    const remaining = Math.max(0, initialBudget - gastos);
+    const usedPercentage = initialBudget > 0 ? Math.min(100, Math.round((gastos / initialBudget) * 100)) : 0;
+
+    // Daily recommended calculation until next reset
+    const now = new Date();
+    const currentDay = now.getDate();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const resetDay = profile.dia_reinicio_presupuesto || 1;
+
+    let daysRemaining = 1;
+    if (currentDay < resetDay) {
+      daysRemaining = resetDay - currentDay;
+    } else {
+      daysRemaining = daysInMonth - currentDay + resetDay;
+    }
+    daysRemaining = Math.max(1, daysRemaining);
+
+    const dailyRecommended = remaining / daysRemaining;
+
+    return {
+      initialBudget,
+      remaining,
+      usedPercentage,
+      dailyRecommended,
+      daysRemaining,
+    };
+  }, [mode, profile, gastos]);
 
   // Category breakdown for current month expenses
   const categoryData = useMemo(() => {
@@ -91,6 +130,11 @@ export default function DashboardPage() {
   return (
     <div className="page-enter min-h-screen bg-slate-50/50 dark:bg-slate-950 px-4 md:px-8 pt-6 pb-28 max-w-xl mx-auto space-y-6">
       
+      {/* Onboarding Modal */}
+      {showOnboarding && (
+        <OnboardingModal onComplete={() => setShowOnboarding(false)} />
+      )}
+
       {/* ── Top Header / Greeting ────────────────────────── */}
       <div className="flex items-center justify-between">
         <div>
@@ -115,65 +159,149 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {/* ── Main Hero Card: Monthly Balance ───────────── */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-900 via-emerald-950 to-slate-950 p-6 text-white shadow-xl border border-emerald-800/30">
-        <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-emerald-500/10 blur-2xl" />
-        <div className="absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-teal-500/10 blur-2xl" />
+      {/* ── MODE 1: PRESUPUESTO (Controlar Presupuesto) ───────────── */}
+      {mode === 'presupuesto' && budgetMetrics && (
+        <div className="space-y-4 animate-fade-in">
+          {/* Main Hero Card: Budget Remaining */}
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-900 via-emerald-950 to-slate-950 p-6 text-white shadow-xl border border-emerald-800/30">
+            <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-emerald-500/10 blur-2xl" />
+            <div className="absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-teal-500/10 blur-2xl" />
 
-        <div className="relative z-10 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-emerald-300/80 tracking-wide">
-              Balance Neto del Mes
-            </span>
-            <div className="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/20 flex items-center gap-1.5 text-xs text-emerald-300">
-              <TrendingUp size={12} />
-              <span>{monthName.split(' ')[0]}</span>
+            <div className="relative z-10 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-emerald-300/80 tracking-wide flex items-center gap-1.5">
+                  <span>💰</span> Dinero Restante
+                </span>
+                <div className="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/20 flex items-center gap-1.5 text-xs text-emerald-300 font-semibold">
+                  <span>Presupuesto</span>
+                </div>
+              </div>
+
+              <div>
+                <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight">
+                  {formatCurrency(budgetMetrics.remaining, currency)}
+                </h2>
+                <p className="text-xs text-emerald-300/70 mt-1">
+                  de {formatCurrency(budgetMetrics.initialBudget, currency)} inicial
+                </p>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="space-y-1.5 pt-1">
+                <div className="flex justify-between items-center text-xs text-emerald-200">
+                  <span>{budgetMetrics.usedPercentage}% utilizado</span>
+                  <span>Gasto total: {formatCurrency(gastos, currency)}</span>
+                </div>
+                <div className="w-full h-3 rounded-full bg-slate-950/60 p-0.5 border border-emerald-800/40">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      budgetMetrics.usedPercentage > 85
+                        ? 'bg-rose-500'
+                        : budgetMetrics.usedPercentage > 65
+                        ? 'bg-amber-400'
+                        : 'bg-emerald-400'
+                    }`}
+                    style={{ width: `${budgetMetrics.usedPercentage}%` }}
+                  />
+                </div>
+              </div>
+
+              {insights.length > 0 && (
+                <div className="pt-1 flex items-center gap-2 text-xs text-emerald-200/90 border-t border-emerald-800/40">
+                  <Sparkles size={14} className="text-emerald-400 flex-shrink-0" />
+                  <span className="truncate">{insights[0]}</span>
+                </div>
+              )}
             </div>
           </div>
 
-          <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight">
-            {balance >= 0 ? '' : '-'}{formatCurrency(Math.abs(balance), currency)}
-          </h2>
-
-          {insights.length > 0 && (
-            <div className="pt-2 flex items-center gap-2 text-xs text-emerald-200/90">
-              <Sparkles size={14} className="text-emerald-400 flex-shrink-0" />
-              <span className="truncate">{insights[0]}</span>
+          {/* Daily Recommended Card */}
+          <div className="rounded-2xl bg-white dark:bg-slate-900 p-4 border border-slate-100 dark:border-slate-800/80 shadow-sm flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                <Zap size={20} />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Recomendado por día</p>
+                <p className="text-lg font-bold text-slate-900 dark:text-white">
+                  {formatCurrency(budgetMetrics.dailyRecommended, currency)}
+                </p>
+              </div>
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* ── Income & Expense Cards ─────────────────────── */}
-      <div className="grid grid-cols-2 gap-3">
-        {/* Income Card */}
-        <div className="rounded-2xl bg-white dark:bg-slate-900 p-4 border border-slate-100 dark:border-slate-800/80 shadow-sm flex flex-col justify-between space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Ingresos</span>
-            <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-              <ArrowDownRight size={16} />
+            <div className="text-right">
+              <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 flex items-center gap-1 justify-end">
+                <Calendar size={12} />
+                Quedan {budgetMetrics.daysRemaining} días
+              </span>
             </div>
           </div>
-          <p className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
-            {formatCurrency(ingresos, currency)}
-          </p>
         </div>
+      )}
 
-        {/* Expense Card */}
-        <div className="rounded-2xl bg-white dark:bg-slate-900 p-4 border border-slate-100 dark:border-slate-800/80 shadow-sm flex flex-col justify-between space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Gastos</span>
-            <div className="w-7 h-7 rounded-full bg-rose-100 dark:bg-rose-950/60 flex items-center justify-center text-rose-600 dark:text-rose-400">
-              <ArrowUpRight size={16} />
+      {/* ── MODE 2: MOVIMIENTOS (Solo Registrar Movimientos) ────── */}
+      {mode === 'movimientos' && (
+        <div className="space-y-4 animate-fade-in">
+          {/* Main Hero Card: Monthly Balance */}
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-900 via-emerald-950 to-slate-950 p-6 text-white shadow-xl border border-emerald-800/30">
+            <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-emerald-500/10 blur-2xl" />
+            <div className="absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-teal-500/10 blur-2xl" />
+
+            <div className="relative z-10 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-emerald-300/80 tracking-wide">
+                  Balance del Período
+                </span>
+                <div className="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/20 flex items-center gap-1.5 text-xs text-emerald-300">
+                  <TrendingUp size={12} />
+                  <span>{monthName.split(' ')[0]}</span>
+                </div>
+              </div>
+
+              <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight">
+                {balance >= 0 ? '' : '-'}{formatCurrency(Math.abs(balance), currency)}
+              </h2>
+
+              {insights.length > 0 && (
+                <div className="pt-2 flex items-center gap-2 text-xs text-emerald-200/90">
+                  <Sparkles size={14} className="text-emerald-400 flex-shrink-0" />
+                  <span className="truncate">{insights[0]}</span>
+                </div>
+              )}
             </div>
           </div>
-          <p className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
-            {formatCurrency(gastos, currency)}
-          </p>
-        </div>
-      </div>
 
-      {/* ── Category Breakdown (Pie Chart) ─────────────── */}
+          {/* Income & Expense Cards */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Income Card */}
+            <div className="rounded-2xl bg-white dark:bg-slate-900 p-4 border border-slate-100 dark:border-slate-800/80 shadow-sm flex flex-col justify-between space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Ingresos</span>
+                <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                  <ArrowDownRight size={16} />
+                </div>
+              </div>
+              <p className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                {formatCurrency(ingresos, currency)}
+              </p>
+            </div>
+
+            {/* Expense Card */}
+            <div className="rounded-2xl bg-white dark:bg-slate-900 p-4 border border-slate-100 dark:border-slate-800/80 shadow-sm flex flex-col justify-between space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Gastos</span>
+                <div className="w-7 h-7 rounded-full bg-rose-100 dark:bg-rose-950/60 flex items-center justify-center text-rose-600 dark:text-rose-400">
+                  <ArrowUpRight size={16} />
+                </div>
+              </div>
+              <p className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                {formatCurrency(gastos, currency)}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Category Breakdown (Pie Chart - Shared in both modes) ── */}
       {categoryData.length > 0 && (
         <div className="rounded-3xl bg-white dark:bg-slate-900 p-5 border border-slate-100 dark:border-slate-800/80 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
@@ -236,7 +364,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── Recent Transactions ───────────────────────── */}
+      {/* ── Recent Transactions (Shared in both modes) ── */}
       <div className="rounded-3xl bg-white dark:bg-slate-900 p-5 border border-slate-100 dark:border-slate-800/80 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-base font-bold text-slate-900 dark:text-white">Últimos movimientos</h3>

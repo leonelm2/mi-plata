@@ -32,11 +32,18 @@ export interface Transaction {
   created_at: string;
 }
 
+export type AppMode = 'presupuesto' | 'movimientos';
+
 export interface Profile {
   nombre: string;
   email: string;
   foto_url: string;
   moneda: string;
+  modo_uso?: AppMode;
+  presupuesto_inicial?: number;
+  fecha_inicio_presupuesto?: string;
+  dia_reinicio_presupuesto?: number;
+  onboarding_completado?: boolean;
 }
 
 export interface CategoryInfo {
