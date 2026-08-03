@@ -135,7 +135,7 @@ export default function StatsPage() {
       {/* Header */}
       <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-4 md:px-6 py-5">
         <h1 className="text-xl font-bold text-slate-900 dark:text-white">Estadísticas</h1>
-        <p className="text-sm text-slate-400 mt-0.5">Resumen del mes actual</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Resumen del mes actual</p>
       </div>
 
       <div className="px-4 md:px-6 py-5 max-w-4xl mx-auto space-y-5">
@@ -148,9 +148,9 @@ export default function StatsPage() {
                 <s.icon size={20} className={s.color} />
               </div>
               <div>
-                <p className="text-xs text-slate-400">{s.label}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{s.label}</p>
                 <p className="text-lg font-bold text-slate-800 dark:text-slate-100">{s.value}</p>
-                <p className="text-xs text-slate-400">{s.sub}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{s.sub}</p>
               </div>
             </div>
           ))}

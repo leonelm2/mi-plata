@@ -163,7 +163,7 @@ export default function AddTransactionPage({ editId, initialValues, onClose }: P
                 className={cn(
                   'flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-200 text-xs font-medium',
                   selectedCategoria === cat.key
-                    ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300'
+                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-semibold'
                     : 'border-transparent bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-200 dark:hover:border-slate-600'
                 )}
               >

@@ -70,7 +70,7 @@ export default function ProfilePage() {
         <div className="card p-6 flex flex-col items-center gap-4 animate-slide-up">
           {/* Avatar */}
           <div className="relative">
-            <div className="w-24 h-24 rounded-3xl overflow-hidden bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center">
+            <div className="w-24 h-24 rounded-3xl overflow-hidden bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center">
               {profile.foto_url ? (
                 <img src={profile.foto_url} alt="Foto" className="w-full h-full object-cover" />
               ) : (
@@ -79,7 +79,7 @@ export default function ProfilePage() {
                 </span>
               )}
             </div>
-            <label className="absolute -bottom-1 -right-1 w-8 h-8 rounded-xl bg-brand-600 flex items-center justify-center cursor-pointer shadow-lg hover:bg-brand-700 transition-colors">
+            <label className="absolute -bottom-1 -right-1 w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center cursor-pointer shadow-lg hover:bg-emerald-700 transition-colors">
               <Camera size={14} className="text-white" />
               <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
             </label>
@@ -115,21 +115,21 @@ export default function ProfilePage() {
           <div className="flex gap-6 text-center">
             <div>
               <p className="text-2xl font-bold text-slate-800 dark:text-white">{transactions.length}</p>
-              <p className="text-xs text-slate-400">movimientos</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">movimientos</p>
             </div>
             <div className="w-px bg-slate-200 dark:bg-slate-700" />
             <div>
               <p className="text-2xl font-bold text-slate-800 dark:text-white">
                 {transactions.filter((t) => t.tipo === 'ingreso').length}
               </p>
-              <p className="text-xs text-slate-400">ingresos</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">ingresos</p>
             </div>
             <div className="w-px bg-slate-200 dark:bg-slate-700" />
             <div>
               <p className="text-2xl font-bold text-slate-800 dark:text-white">
                 {transactions.filter((t) => t.tipo === 'gasto').length}
               </p>
-              <p className="text-xs text-slate-400">gastos</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">gastos</p>
             </div>
           </div>
         </div>
@@ -140,13 +140,13 @@ export default function ProfilePage() {
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
               {theme === 'dark' ? (
-                <Moon size={20} className="text-brand-500" />
+                <Moon size={20} className="text-sky-400" />
               ) : (
                 <Sun size={20} className="text-amber-500" />
               )}
               <div>
                 <p className="text-sm font-medium text-slate-800 dark:text-slate-100">Modo oscuro</p>
-                <p className="text-xs text-slate-400">{theme === 'dark' ? 'Activado' : 'Desactivado'}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{theme === 'dark' ? 'Activado' : 'Desactivado'}</p>
               </div>
             </div>
             <button
@@ -172,7 +172,7 @@ export default function ProfilePage() {
               <DollarSign size={20} className="text-emerald-500" />
               <div>
                 <p className="text-sm font-medium text-slate-800 dark:text-slate-100">Moneda</p>
-                <p className="text-xs text-slate-400">{profile.moneda}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{profile.moneda}</p>
               </div>
             </div>
             <select
@@ -181,7 +181,7 @@ export default function ProfilePage() {
                 updateProfile({ moneda: e.target.value });
                 showToast('Moneda actualizada ✓', 'success');
               }}
-              className="text-sm font-medium text-brand-600 dark:text-brand-400 bg-transparent border-none focus:outline-none cursor-pointer"
+              className="text-sm font-medium text-emerald-600 dark:text-emerald-400 bg-transparent border-none focus:outline-none cursor-pointer"
             >
               {CURRENCIES.map((c) => (
                 <option key={c.code} value={c.code}>{c.label}</option>
@@ -197,13 +197,13 @@ export default function ProfilePage() {
             <Download size={20} className="text-blue-500" />
             <div className="text-left">
               <p className="text-sm font-medium text-slate-800 dark:text-slate-100">Exportar datos</p>
-              <p className="text-xs text-slate-400">Descarga CSV con todos tus movimientos</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Descarga CSV con todos tus movimientos</p>
             </div>
           </button>
         </div>
 
         {/* App info */}
-        <div className="text-center text-xs text-slate-400 dark:text-slate-600 py-4">
+        <div className="text-center text-xs text-slate-500 dark:text-slate-500 py-4">
           Mi Plata v1.0 · Hecho con ❤️
         </div>
       </div>

@@ -112,9 +112,9 @@ export default function TransactionsPage() {
           <button
             onClick={() => setShowFilters((s) => !s)}
             className={cn(
-              'flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors',
+              'flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors',
               showFilters || hasFilters
-                ? 'bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300'
+                ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300/50'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
             )}
           >
@@ -124,9 +124,9 @@ export default function TransactionsPage() {
           <button
             onClick={() => toggleSort('fecha')}
             className={cn(
-              'flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors',
+              'flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors',
               sortKey === 'fecha'
-                ? 'bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300'
+                ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300/50'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
             )}
           >
@@ -136,9 +136,9 @@ export default function TransactionsPage() {
           <button
             onClick={() => toggleSort('importe')}
             className={cn(
-              'flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors',
+              'flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors',
               sortKey === 'importe'
-                ? 'bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300'
+                ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300/50'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
             )}
           >
@@ -208,7 +208,7 @@ export default function TransactionsPage() {
 
       {/* Transaction list */}
       <div className="px-4 md:px-6 py-4 max-w-2xl mx-auto">
-        <p className="text-xs text-slate-400 mb-3">{filtered.length} movimiento{filtered.length !== 1 ? 's' : ''}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">{filtered.length} movimiento{filtered.length !== 1 ? 's' : ''}</p>
 
         {filtered.length === 0 ? (
           <div className="text-center py-16 text-slate-400">
@@ -234,7 +234,7 @@ export default function TransactionsPage() {
                     <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
                       {tx.descripcion || cat.label}
                     </p>
-                    <p className="text-xs text-slate-400">{cat.label} · {formatDate(tx.fecha)}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{cat.label} · {formatDate(tx.fecha)}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1.5">
                     <span
