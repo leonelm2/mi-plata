@@ -23,14 +23,14 @@ export default function LoginPage() {
     setIsLoading(true);
 
     setTimeout(() => {
-      // Extract name from email as fallback greeting
-      const namePart = email.split('@')[0];
-      const formattedName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+      // Determine name: if demo email or custom
+      const isDemo = email.toLowerCase().includes('demo');
+      const userNombre = isDemo ? 'Lionel Andrés' : email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1);
 
       login(email);
-      updateProfile({ email, nombre: formattedName });
+      updateProfile({ email, nombre: userNombre });
 
-      showToast(`¡Bienvenido de nuevo, ${formattedName}! 👋`, 'success');
+      showToast(`¡Bienvenido de nuevo, ${userNombre}! 👋`, 'success');
       setIsLoading(false);
       navigate('/');
     }, 800);

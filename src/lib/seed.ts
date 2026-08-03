@@ -44,8 +44,8 @@ export const SEED_TRANSACTIONS: Transaction[] = [
 ];
 
 export const SEED_PROFILE = {
-  nombre: 'Santiago García',
-  email: 'santi@miplata.app',
+  nombre: 'Lionel Andrés',
+  email: 'lionel@miplata.app',
   foto_url: '',
   moneda: 'ARS',
 };
