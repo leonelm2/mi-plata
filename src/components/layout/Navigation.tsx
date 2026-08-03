@@ -20,7 +20,7 @@ export function BottomNav() {
   const { setAddModalOpen } = useApp();
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 flex items-center justify-around px-2 py-2 md:hidden safe-area-pb shadow-lg">
-      {NAV_ITEMS.map(({ to, label, icon: Icon }, index) => (
+      {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
         <NavLink
           key={to}
           to={to}

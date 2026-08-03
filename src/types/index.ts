@@ -44,6 +44,8 @@ export interface Profile {
   fecha_inicio_presupuesto?: string;
   dia_reinicio_presupuesto?: number;
   onboarding_completado?: boolean;
+  objetivo_nombre?: string;
+  objetivo_monto?: number;
 }
 
 export interface CategoryInfo {

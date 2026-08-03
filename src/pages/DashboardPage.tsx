@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Wallet, ArrowUpRight, ArrowDownRight, ArrowRight, Sparkles, TrendingUp, Calendar, Zap } from 'lucide-react';
+import { Plus, Wallet, ArrowUpRight, ArrowDownRight, ArrowRight, Sparkles, TrendingUp, Calendar, Zap, Target } from 'lucide-react';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer
 } from 'recharts';
@@ -42,6 +42,13 @@ export default function DashboardPage() {
   const { ingresos, gastos } = useMemo(() => calcMonthSummary(transactions, currYM), [transactions, currYM]);
   const prevMonth = useMemo(() => calcMonthSummary(transactions, prevYM), [transactions, prevYM]);
   const balance = ingresos - gastos;
+
+  const totalBalance = useMemo(() => {
+    return transactions.reduce((acc, t) => {
+      if (t.tipo === 'ingreso') return acc + t.importe;
+      return acc - t.importe;
+    }, 0);
+  }, [transactions]);
 
   // ── Budget calculations (Presupuesto Mode) ──────────────────────────────────
   const budgetMetrics = useMemo(() => {
@@ -158,6 +165,43 @@ export default function DashboardPage() {
           )}
         </Link>
       </div>
+
+      {/* ── OBJETIVO (Goal) ───────────── */}
+      {profile.objetivo_monto && profile.objetivo_monto > 0 && (
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-violet-700 to-indigo-900 p-6 text-white shadow-xl border border-violet-500/30 animate-fade-in">
+          <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
+          
+          <div className="relative z-10 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-violet-200 tracking-wide flex items-center gap-1.5">
+                <Target size={14} /> Mi Objetivo: {profile.objetivo_nombre || 'Ahorro'}
+              </span>
+            </div>
+
+            <div>
+              <h2 className="text-3xl font-extrabold tracking-tight">
+                {formatCurrency(Math.max(0, totalBalance), currency)}
+              </h2>
+              <p className="text-xs text-violet-200 mt-1">
+                de {formatCurrency(profile.objetivo_monto, currency)}
+              </p>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="space-y-1.5 pt-1">
+              <div className="flex justify-between items-center text-xs text-violet-200">
+                <span>{Math.min(100, Math.round((Math.max(0, totalBalance) / profile.objetivo_monto) * 100))}% alcanzado</span>
+              </div>
+              <div className="w-full h-3 rounded-full bg-black/20 p-0.5 border border-violet-500/40">
+                <div
+                  className="h-full rounded-full transition-all duration-500 bg-white"
+                  style={{ width: `${Math.min(100, Math.max(0, (totalBalance / profile.objetivo_monto) * 100))}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── MODE 1: PRESUPUESTO (Controlar Presupuesto) ───────────── */}
       {mode === 'presupuesto' && budgetMetrics && (
