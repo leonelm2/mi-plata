@@ -6,7 +6,6 @@ import {
   User,
   PlusCircle,
 } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
 import { cn } from '../../lib/utils';
 
 const NAV_ITEMS = [
