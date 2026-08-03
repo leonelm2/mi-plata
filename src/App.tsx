@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import { ToastProvider } from './context/ToastContext';
 import { AppLayout } from './components/layout/AppLayout';
+import { ScrollToTop } from './components/shared/ScrollToTop';
 import DashboardPage from './pages/DashboardPage';
 import AddTransactionPage from './pages/AddTransactionPage';
 import TransactionsPage from './pages/TransactionsPage';
@@ -11,6 +12,7 @@ import ProfilePage from './pages/ProfilePage';
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <ToastProvider>
         <AppProvider>
           <Routes>
