@@ -1,78 +1,98 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Transaction } from '../types';
-import { SEED_TRANSACTIONS } from '../lib/seed';
-import { StorageEngine } from '../lib/db';
+import { TransactionService } from '../services/supabase/transactions';
+import { MigrationService } from '../services/supabase/migration';
 
-const STORAGE_KEY = 'miplata_transactions';
-
-function loadInitialSync(): Transaction[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as Transaction[];
-  } catch {
-    // Ignore
-  }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_TRANSACTIONS));
-  return SEED_TRANSACTIONS;
-}
-
-export function useTransactions() {
-  const [transactions, setTransactions] = useState<Transaction[]>(loadInitialSync);
+export function useTransactions(userId: string | null) {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Sync with IndexedDB on mount
+  // Sync with Supabase on userId change & run initial migration from IndexedDB
   useEffect(() => {
+    if (!userId) {
+      setTransactions([]);
+      setIsLoading(false);
+      return;
+    }
+
     let isMounted = true;
-    StorageEngine.getAll().then((data) => {
-      if (isMounted && data && data.length > 0) {
-        setTransactions(data);
+    setIsLoading(true);
+
+    (async () => {
+      try {
+        // Run migration from legacy local DB if first login
+        await MigrationService.migrateIfNeeded(userId);
+        const data = await TransactionService.getAll(userId);
+        if (isMounted) {
+          setTransactions(data);
+        }
+      } catch (err) {
+        console.error('Error fetching transactions from Supabase:', err);
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
-      if (isMounted) setIsLoading(false);
-    }).catch(() => {
-      if (isMounted) setIsLoading(false);
-    });
+    })();
+
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [userId]);
 
   const addTransaction = useCallback(
-    (tx: Omit<Transaction, 'id' | 'created_at'>): Transaction => {
-      const newTx: Transaction = {
+    async (tx: Omit<Transaction, 'id' | 'created_at'>): Promise<Transaction> => {
+      // Optimistic UI update
+      const tempId = `temp_${Date.now()}`;
+      const tempTx: Transaction = {
         ...tx,
-        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `tx_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        id: tempId,
         created_at: new Date().toISOString(),
       };
 
-      setTransactions((prev) => {
-        const updated = [newTx, ...prev];
-        StorageEngine.saveAll(updated);
-        return updated;
-      });
+      setTransactions((prev) => [tempTx, ...prev]);
 
-      return newTx;
+      if (userId) {
+        try {
+          const realTx = await TransactionService.add(userId, tx);
+          setTransactions((prev) => prev.map((t) => (t.id === tempId ? realTx : t)));
+          return realTx;
+        } catch (e) {
+          // Rollback on error
+          setTransactions((prev) => prev.filter((t) => t.id !== tempId));
+          throw e;
+        }
+      }
+      return tempTx;
     },
-    []
+    [userId]
   );
 
   const updateTransaction = useCallback(
-    (id: string, updates: Partial<Omit<Transaction, 'id' | 'created_at'>>) => {
-      setTransactions((prev) => {
-        const updated = prev.map((t) => (t.id === id ? { ...t, ...updates } : t));
-        StorageEngine.saveAll(updated);
-        return updated;
-      });
+    async (id: string, updates: Partial<Omit<Transaction, 'id' | 'created_at'>>) => {
+      setTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
+      if (userId) {
+        try {
+          await TransactionService.update(id, updates);
+        } catch (e) {
+          console.error('Error updating transaction on Supabase:', e);
+        }
+      }
     },
-    []
+    [userId]
   );
 
-  const deleteTransaction = useCallback((id: string) => {
-    setTransactions((prev) => {
-      const updated = prev.filter((t) => t.id !== id);
-      StorageEngine.saveAll(updated);
-      return updated;
-    });
-  }, []);
+  const deleteTransaction = useCallback(
+    async (id: string) => {
+      setTransactions((prev) => prev.filter((t) => t.id !== id));
+      if (userId) {
+        try {
+          await TransactionService.delete(id);
+        } catch (e) {
+          console.error('Error deleting transaction on Supabase:', e);
+        }
+      }
+    },
+    [userId]
+  );
 
   return { transactions, addTransaction, updateTransaction, deleteTransaction, isLoading };
 }
