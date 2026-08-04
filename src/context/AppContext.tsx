@@ -18,12 +18,13 @@ interface AppContextType {
   userEmail: string | null;
   login: (email: string) => void;
   logout: () => void;
+  isLoading: boolean;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const { transactions, addTransaction, updateTransaction, deleteTransaction } = useTransactions();
+  const { transactions, addTransaction, updateTransaction, deleteTransaction, isLoading } = useTransactions();
   const { profile, updateProfile } = useProfile();
   const { theme, toggleTheme } = useTheme();
   const { isAuthenticated, userEmail, login, logout } = useAuth();
@@ -43,6 +44,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         userEmail,
         login,
         logout,
+        isLoading,
       }}
     >
       {children}
