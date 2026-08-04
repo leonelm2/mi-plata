@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   Moon, Sun, DollarSign, Download,
-  Camera, Check, Pencil, LogOut, Wallet
+  Camera, Check, Pencil, LogOut, Wallet, Target
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../context/ToastContext';
@@ -226,6 +226,46 @@ export default function ProfilePage() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Objetivo */}
+          <div className="p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <Target size={20} className="text-violet-500" />
+              <div>
+                <p className="text-sm font-medium text-slate-800 dark:text-slate-100">Mi Objetivo</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Definí una meta de ahorro (ej. comprar un auto)
+                </p>
+              </div>
+            </div>
+            
+            <div className="pt-2 pl-8 grid grid-cols-1 sm:grid-cols-2 gap-3 animate-fade-in">
+              <div>
+                <label className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 block mb-1">
+                  Nombre del objetivo
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej. Comprar un auto"
+                  value={profile.objetivo_nombre || ''}
+                  onChange={(e) => updateProfile({ objetivo_nombre: e.target.value })}
+                  className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-medium text-slate-800 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 block mb-1">
+                  Monto meta
+                </label>
+                <input
+                  type="number"
+                  placeholder="0"
+                  value={profile.objetivo_monto || ''}
+                  onChange={(e) => updateProfile({ objetivo_monto: Number(e.target.value) })}
+                  className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white font-bold"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Currency */}

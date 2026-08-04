@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { Sidebar, BottomNav } from './Navigation';
 import { ToastContainer } from '../shared/ToastContainer';
+import { AddTransactionModal } from '../shared/AddTransactionModal';
 
 export function AppLayout() {
   return (
@@ -13,6 +14,7 @@ export function AppLayout() {
       </main>
       <BottomNav />
       <ToastContainer />
+      <AddTransactionModal />
     </div>
   );
 }
