@@ -94,5 +94,15 @@ export function useTransactions(userId: string | null) {
     [userId]
   );
 
-  return { transactions, addTransaction, updateTransaction, deleteTransaction, isLoading };
+  const deleteAllTransactions = useCallback(async () => {
+    if (!userId) return;
+    setTransactions([]);
+    try {
+      await TransactionService.deleteAll(userId);
+    } catch (e) {
+      console.error('Error deleting all transactions on Supabase:', e);
+    }
+  }, [userId]);
+
+  return { transactions, addTransaction, updateTransaction, deleteTransaction, deleteAllTransactions, isLoading };
 }

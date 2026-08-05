@@ -62,4 +62,16 @@ export const TransactionService = {
       throw error;
     }
   },
+
+  async deleteAll(userId: string): Promise<void> {
+    const { error } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error deleting all transactions:', error);
+      throw error;
+    }
+  },
 };

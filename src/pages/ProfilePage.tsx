@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   Moon, Sun, DollarSign, Download,
-  Camera, Check, Pencil, LogOut, Wallet, Target
+  Camera, Check, Pencil, LogOut, Wallet, Target, Trash2
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../context/ToastContext';
@@ -17,7 +17,7 @@ const CURRENCIES = [
 ];
 
 export default function ProfilePage() {
-  const { profile, updateProfile, theme, toggleTheme, transactions, logout } = useApp();
+  const { profile, updateProfile, theme, toggleTheme, transactions, deleteAllTransactions, logout } = useApp();
   const { showToast } = useToast();
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(profile.nombre);
@@ -300,6 +300,23 @@ export default function ProfilePage() {
             <div className="text-left">
               <p className="text-sm font-medium text-slate-800 dark:text-slate-100">Exportar datos</p>
               <p className="text-xs text-slate-500 dark:text-slate-400">Descarga CSV con todos tus movimientos</p>
+            </div>
+          </button>
+
+          {/* Delete All Data */}
+          <button
+            onClick={() => {
+              if (window.confirm('¿Estás seguro de que querés borrar todos tus movimientos? Esta acción no se puede deshacer.')) {
+                deleteAllTransactions();
+                showToast('Todos los datos fueron eliminados ✓', 'success');
+              }
+            }}
+            className="flex items-center gap-3 p-4 w-full hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 dark:text-rose-400 transition-colors"
+          >
+            <Trash2 size={20} />
+            <div className="text-left">
+              <p className="text-sm font-medium">Borrar todos mis datos</p>
+              <p className="text-xs text-rose-500/80 dark:text-rose-400/70">Eliminar todos tus movimientos guardados</p>
             </div>
           </button>
 

@@ -10,6 +10,7 @@ interface AppContextType {
   addTransaction: (tx: Omit<Transaction, 'id' | 'created_at'>) => Promise<Transaction>;
   updateTransaction: (id: string, updates: Partial<Omit<Transaction, 'id' | 'created_at'>>) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
+  deleteAllTransactions: () => Promise<void>;
   profile: Profile;
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
   theme: 'light' | 'dark';
@@ -31,7 +32,7 @@ const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, userId, userEmail, login, loginWithGoogle, register, logout, resetPassword, isLoading: authLoading } = useAuth();
-  const { transactions, addTransaction, updateTransaction, deleteTransaction, isLoading: txLoading } = useTransactions(userId);
+  const { transactions, addTransaction, updateTransaction, deleteTransaction, deleteAllTransactions, isLoading: txLoading } = useTransactions(userId);
   const { profile, updateProfile, isLoading: profileLoading } = useProfile(userId);
   const { theme, toggleTheme } = useTheme();
 
@@ -46,6 +47,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         addTransaction,
         updateTransaction,
         deleteTransaction,
+        deleteAllTransactions,
         profile,
         updateProfile,
         theme,
