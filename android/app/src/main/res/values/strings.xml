@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Mi Plata</string>
+    <string name="title_activity_main">Mi Plata</string>
+    <string name="package_name">com.miplata.app</string>
+    <string name="custom_url_scheme">com.miplata.app</string>
+</resources>
