@@ -7,17 +7,22 @@ import type { Transaction, Profile } from '../types';
 
 interface AppContextType {
   transactions: Transaction[];
-  addTransaction: (tx: Omit<Transaction, 'id' | 'created_at'>) => Transaction;
-  updateTransaction: (id: string, updates: Partial<Omit<Transaction, 'id' | 'created_at'>>) => void;
-  deleteTransaction: (id: string) => void;
+  addTransaction: (tx: Omit<Transaction, 'id' | 'created_at'>) => Promise<Transaction>;
+  updateTransaction: (id: string, updates: Partial<Omit<Transaction, 'id' | 'created_at'>>) => Promise<void>;
+  deleteTransaction: (id: string) => Promise<void>;
   profile: Profile;
-  updateProfile: (updates: Partial<Profile>) => void;
+  updateProfile: (updates: Partial<Profile>) => Promise<void>;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
   isAuthenticated: boolean;
   userEmail: string | null;
-  login: (email: string) => void;
-  logout: () => void;
+  userId: string | null;
+  login: (email: string, pass: string) => Promise<any>;
+  loginWithGoogle: () => Promise<any>;
+  register: (email: string, pass: string, nombre?: string, moneda?: string) => Promise<any>;
+  logout: () => Promise<void>;
+  resetPassword: (email: string) => Promise<any>;
+  isLoading: boolean;
   isAddModalOpen: boolean;
   setAddModalOpen: (open: boolean) => void;
 }
@@ -25,11 +30,14 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const { transactions, addTransaction, updateTransaction, deleteTransaction } = useTransactions();
-  const { profile, updateProfile } = useProfile();
+  const { isAuthenticated, userId, userEmail, login, loginWithGoogle, register, logout, resetPassword, isLoading: authLoading } = useAuth();
+  const { transactions, addTransaction, updateTransaction, deleteTransaction, isLoading: txLoading } = useTransactions(userId);
+  const { profile, updateProfile, isLoading: profileLoading } = useProfile(userId);
   const { theme, toggleTheme } = useTheme();
-  const { isAuthenticated, userEmail, login, logout } = useAuth();
+
   const [isAddModalOpen, setAddModalOpen] = useState(false);
+
+  const isLoading = authLoading || txLoading || profileLoading;
 
   return (
     <AppContext.Provider
@@ -44,8 +52,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         toggleTheme,
         isAuthenticated,
         userEmail,
+        userId,
         login,
+        loginWithGoogle,
+        register,
         logout,
+        resetPassword,
+        isLoading,
         isAddModalOpen,
         setAddModalOpen,
       }}

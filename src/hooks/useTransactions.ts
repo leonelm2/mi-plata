@@ -1,59 +1,98 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { Transaction } from '../types';
-import { SEED_TRANSACTIONS } from '../lib/seed';
+import { TransactionService } from '../services/supabase/transactions';
+import { MigrationService } from '../services/supabase/migration';
 
-const STORAGE_KEY = 'miplata_transactions';
+export function useTransactions(userId: string | null) {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-function loadTransactions(): Transaction[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as Transaction[];
-  } catch {
-    // ignore
-  }
-  // First load: seed with demo data
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_TRANSACTIONS));
-  return SEED_TRANSACTIONS;
-}
+  // Sync with Supabase on userId change & run initial migration from IndexedDB
+  useEffect(() => {
+    if (!userId) {
+      setTransactions([]);
+      setIsLoading(false);
+      return;
+    }
 
-function saveTransactions(transactions: Transaction[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
-}
+    let isMounted = true;
+    setIsLoading(true);
 
-export function useTransactions() {
-  const [transactions, setTransactions] = useState<Transaction[]>(loadTransactions);
+    (async () => {
+      try {
+        // Run migration from legacy local DB if first login
+        await MigrationService.migrateIfNeeded(userId);
+        const data = await TransactionService.getAll(userId);
+        if (isMounted) {
+          setTransactions(data);
+        }
+      } catch (err) {
+        console.error('Error fetching transactions from Supabase:', err);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    })();
 
-  const persist = useCallback((updated: Transaction[]) => {
-    saveTransactions(updated);
-    setTransactions(updated);
-  }, []);
+    return () => {
+      isMounted = false;
+    };
+  }, [userId]);
 
   const addTransaction = useCallback(
-    (tx: Omit<Transaction, 'id' | 'created_at'>) => {
-      const newTx: Transaction = {
+    async (tx: Omit<Transaction, 'id' | 'created_at'>): Promise<Transaction> => {
+      // Optimistic UI update
+      const tempId = `temp_${Date.now()}`;
+      const tempTx: Transaction = {
         ...tx,
-        id: crypto.randomUUID(),
+        id: tempId,
         created_at: new Date().toISOString(),
       };
-      persist([newTx, ...transactions]);
-      return newTx;
+
+      setTransactions((prev) => [tempTx, ...prev]);
+
+      if (userId) {
+        try {
+          const realTx = await TransactionService.add(userId, tx);
+          setTransactions((prev) => prev.map((t) => (t.id === tempId ? realTx : t)));
+          return realTx;
+        } catch (e) {
+          // Rollback on error
+          setTransactions((prev) => prev.filter((t) => t.id !== tempId));
+          throw e;
+        }
+      }
+      return tempTx;
     },
-    [transactions, persist]
+    [userId]
   );
 
   const updateTransaction = useCallback(
-    (id: string, updates: Partial<Omit<Transaction, 'id' | 'created_at'>>) => {
-      persist(transactions.map((t) => (t.id === id ? { ...t, ...updates } : t)));
+    async (id: string, updates: Partial<Omit<Transaction, 'id' | 'created_at'>>) => {
+      setTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
+      if (userId) {
+        try {
+          await TransactionService.update(id, updates);
+        } catch (e) {
+          console.error('Error updating transaction on Supabase:', e);
+        }
+      }
     },
-    [transactions, persist]
+    [userId]
   );
 
   const deleteTransaction = useCallback(
-    (id: string) => {
-      persist(transactions.filter((t) => t.id !== id));
+    async (id: string) => {
+      setTransactions((prev) => prev.filter((t) => t.id !== id));
+      if (userId) {
+        try {
+          await TransactionService.delete(id);
+        } catch (e) {
+          console.error('Error deleting transaction on Supabase:', e);
+        }
+      }
     },
-    [transactions, persist]
+    [userId]
   );
 
-  return { transactions, addTransaction, updateTransaction, deleteTransaction };
+  return { transactions, addTransaction, updateTransaction, deleteTransaction, isLoading };
 }

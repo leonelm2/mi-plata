@@ -1,64 +1,56 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Wallet, ArrowUpRight, ArrowDownRight, ArrowRight, Sparkles, TrendingUp, Calendar, Zap, Target } from 'lucide-react';
+import { Plus, Wallet, ArrowUpRight, ArrowDownRight, ArrowRight, Sparkles, TrendingUp, Calendar, Zap } from 'lucide-react';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { useApp } from '../context/AppContext';
 import { OnboardingModal } from '../components/shared/OnboardingModal';
+import { DashboardSkeleton } from '../components/shared/Skeletons';
 import {
   formatCurrency, formatDateShort,
   currentYearMonth, previousYearMonth
 } from '../lib/formatters';
+import { addMoney, subtractMoney, calculatePercentage } from '../lib/financeMath';
 import { getCategoryInfo } from '../lib/categories';
 import type { Transaction } from '../types';
 
-// ── helpers ──────────────────────────────────────────────────────────────────
-
 function calcMonthSummary(txs: Transaction[], ym: string) {
-  return txs
-    .filter((t) => t.fecha.startsWith(ym))
-    .reduce(
-      (acc, t) => {
-        if (t.tipo === 'ingreso') acc.ingresos += t.importe;
-        else acc.gastos += t.importe;
-        return acc;
-      },
-      { ingresos: 0, gastos: 0 }
-    );
+  let ingresos = 0;
+  let gastos = 0;
+  for (let i = 0; i < txs.length; i++) {
+    const t = txs[i];
+    if (t.fecha.startsWith(ym)) {
+      if (t.tipo === 'ingreso') {
+        ingresos = addMoney(ingresos, t.importe);
+      } else {
+        gastos = addMoney(gastos, t.importe);
+      }
+    }
+  }
+  return { ingresos, gastos };
 }
 
 export default function DashboardPage() {
-  const { transactions, profile, setAddModalOpen } = useApp();
+  const { transactions, profile, isLoading } = useApp();
   const currency = profile.moneda;
   const currYM = currentYearMonth();
   const prevYM = previousYearMonth();
 
-  // Onboarding modal visibility state
   const [showOnboarding, setShowOnboarding] = useState<boolean>(!profile.onboarding_completado);
-
   const mode = profile.modo_uso || 'presupuesto';
 
   const { ingresos, gastos } = useMemo(() => calcMonthSummary(transactions, currYM), [transactions, currYM]);
   const prevMonth = useMemo(() => calcMonthSummary(transactions, prevYM), [transactions, prevYM]);
-  const balance = ingresos - gastos;
+  const balance = subtractMoney(ingresos, gastos);
 
-  const totalBalance = useMemo(() => {
-    return transactions.reduce((acc, t) => {
-      if (t.tipo === 'ingreso') return acc + t.importe;
-      return acc - t.importe;
-    }, 0);
-  }, [transactions]);
-
-  // ── Budget calculations (Presupuesto Mode) ──────────────────────────────────
   const budgetMetrics = useMemo(() => {
     if (mode !== 'presupuesto') return null;
 
     const initialBudget = profile.presupuesto_inicial || 0;
-    const remaining = Math.max(0, initialBudget - gastos);
-    const usedPercentage = initialBudget > 0 ? Math.min(100, Math.round((gastos / initialBudget) * 100)) : 0;
+    const remaining = Math.max(0, subtractMoney(initialBudget, gastos));
+    const usedPercentage = calculatePercentage(gastos, initialBudget);
 
-    // Daily recommended calculation until next reset
     const now = new Date();
     const currentDay = now.getDate();
     const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
@@ -71,8 +63,7 @@ export default function DashboardPage() {
       daysRemaining = daysInMonth - currentDay + resetDay;
     }
     daysRemaining = Math.max(1, daysRemaining);
-
-    const dailyRecommended = remaining / daysRemaining;
+    const dailyRecommended = Math.round((remaining / daysRemaining) * 100) / 100;
 
     return {
       initialBudget,
@@ -83,14 +74,14 @@ export default function DashboardPage() {
     };
   }, [mode, profile, gastos]);
 
-  // Category breakdown for current month expenses
   const categoryData = useMemo(() => {
     const map: Record<string, number> = {};
-    transactions
-      .filter((t) => t.tipo === 'gasto' && t.fecha.startsWith(currYM))
-      .forEach((t) => {
-        map[t.categoria] = (map[t.categoria] ?? 0) + t.importe;
-      });
+    for (let i = 0; i < transactions.length; i++) {
+      const t = transactions[i];
+      if (t.tipo === 'gasto' && t.fecha.startsWith(currYM)) {
+        map[t.categoria] = addMoney(map[t.categoria] ?? 0, t.importe);
+      }
+    }
     return Object.entries(map)
       .map(([key, value]) => ({
         name: getCategoryInfo(key).label,
@@ -102,16 +93,14 @@ export default function DashboardPage() {
       .sort((a, b) => b.value - a.value);
   }, [transactions, currYM]);
 
-  // Recent transactions (last 5)
   const recent = useMemo(
     () =>
       [...transactions]
-        .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+        .sort((a, b) => (a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : 0))
         .slice(0, 5),
     [transactions]
   );
 
-  // Smart insights
   const insights = useMemo(() => {
     const msgs: string[] = [];
     if (categoryData.length > 0) {
@@ -128,21 +117,22 @@ export default function DashboardPage() {
     return msgs.slice(0, 1);
   }, [categoryData, gastos, prevMonth]);
 
-  // Current Month Name
   const monthName = useMemo(() => {
     const date = new Date();
     return date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
   }, []);
 
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+
   return (
     <div className="page-enter min-h-screen bg-slate-50/50 dark:bg-slate-950 px-4 md:px-8 pt-6 pb-28 max-w-xl mx-auto space-y-6">
-      
-      {/* Onboarding Modal */}
       {showOnboarding && (
         <OnboardingModal onComplete={() => setShowOnboarding(false)} />
       )}
 
-      {/* ── Top Header / Greeting ────────────────────────── */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-semibold tracking-wider text-emerald-600 dark:text-emerald-400 uppercase">
@@ -155,6 +145,7 @@ export default function DashboardPage() {
         <Link
           to="/perfil"
           className="w-10 h-10 rounded-full overflow-hidden border-2 border-emerald-500/20 shadow-sm hover:scale-105 transition-transform"
+          aria-label="Ir a Perfil"
         >
           {profile.foto_url ? (
             <img src={profile.foto_url} alt="Perfil" className="w-full h-full object-cover" />
@@ -166,47 +157,9 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {/* ── OBJETIVO (Goal) ───────────── */}
-      {profile.objetivo_monto && profile.objetivo_monto > 0 && (
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-violet-700 to-indigo-900 p-6 text-white shadow-xl border border-violet-500/30 animate-fade-in">
-          <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
-          
-          <div className="relative z-10 space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-violet-200 tracking-wide flex items-center gap-1.5">
-                <Target size={14} /> Mi Objetivo: {profile.objetivo_nombre || 'Ahorro'}
-              </span>
-            </div>
-
-            <div>
-              <h2 className="text-3xl font-extrabold tracking-tight">
-                {formatCurrency(Math.max(0, totalBalance), currency)}
-              </h2>
-              <p className="text-xs text-violet-200 mt-1">
-                de {formatCurrency(profile.objetivo_monto, currency)}
-              </p>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="space-y-1.5 pt-1">
-              <div className="flex justify-between items-center text-xs text-violet-200">
-                <span>{Math.min(100, Math.round((Math.max(0, totalBalance) / profile.objetivo_monto) * 100))}% alcanzado</span>
-              </div>
-              <div className="w-full h-3 rounded-full bg-black/20 p-0.5 border border-violet-500/40">
-                <div
-                  className="h-full rounded-full transition-all duration-500 bg-white"
-                  style={{ width: `${Math.min(100, Math.max(0, (totalBalance / profile.objetivo_monto) * 100))}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── MODE 1: PRESUPUESTO (Controlar Presupuesto) ───────────── */}
+      {/* MODE PRESUPUESTO */}
       {mode === 'presupuesto' && budgetMetrics && (
         <div className="space-y-4 animate-fade-in">
-          {/* Main Hero Card: Budget Remaining */}
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-900 via-emerald-950 to-slate-950 p-6 text-white shadow-xl border border-emerald-800/30">
             <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-emerald-500/10 blur-2xl" />
             <div className="absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-teal-500/10 blur-2xl" />
@@ -230,7 +183,6 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              {/* Progress Bar */}
               <div className="space-y-1.5 pt-1">
                 <div className="flex justify-between items-center text-xs text-emerald-200">
                   <span>{budgetMetrics.usedPercentage}% utilizado</span>
@@ -259,7 +211,6 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Daily Recommended Card */}
           <div className="rounded-2xl bg-white dark:bg-slate-900 p-4 border border-slate-100 dark:border-slate-800/80 shadow-sm flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
@@ -282,10 +233,9 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── MODE 2: MOVIMIENTOS (Solo Registrar Movimientos) ────── */}
+      {/* MODE MOVIMIENTOS */}
       {mode === 'movimientos' && (
         <div className="space-y-4 animate-fade-in">
-          {/* Main Hero Card: Monthly Balance */}
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-900 via-emerald-950 to-slate-950 p-6 text-white shadow-xl border border-emerald-800/30">
             <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-emerald-500/10 blur-2xl" />
             <div className="absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-teal-500/10 blur-2xl" />
@@ -314,9 +264,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Income & Expense Cards */}
           <div className="grid grid-cols-2 gap-3">
-            {/* Income Card */}
             <div className="rounded-2xl bg-white dark:bg-slate-900 p-4 border border-slate-100 dark:border-slate-800/80 shadow-sm flex flex-col justify-between space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Ingresos</span>
@@ -329,7 +277,6 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            {/* Expense Card */}
             <div className="rounded-2xl bg-white dark:bg-slate-900 p-4 border border-slate-100 dark:border-slate-800/80 shadow-sm flex flex-col justify-between space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Gastos</span>
@@ -345,7 +292,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── Category Breakdown (Pie Chart - Shared in both modes) ── */}
+      {/* Category Breakdown */}
       {categoryData.length > 0 && (
         <div className="rounded-3xl bg-white dark:bg-slate-900 p-5 border border-slate-100 dark:border-slate-800/80 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
@@ -385,7 +332,7 @@ export default function DashboardPage() {
 
             <div className="flex-1 grid grid-cols-1 gap-2.5 w-full">
               {categoryData.slice(0, 4).map((cat) => {
-                const pct = gastos > 0 ? ((cat.value / gastos) * 100).toFixed(0) : 0;
+                const pct = gastos > 0 ? calculatePercentage(cat.value, gastos) : 0;
                 return (
                   <div key={cat.key} className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2 min-w-0">
@@ -408,7 +355,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── Recent Transactions (Shared in both modes) ── */}
+      {/* Recent Transactions */}
       <div className="rounded-3xl bg-white dark:bg-slate-900 p-5 border border-slate-100 dark:border-slate-800/80 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-base font-bold text-slate-900 dark:text-white">Últimos movimientos</h3>
@@ -465,8 +412,8 @@ export default function DashboardPage() {
       </div>
 
       {/* Mobile Floating Action Button (FAB) */}
-      <button
-        onClick={() => setAddModalOpen(true)}
+      <Link
+        to="/agregar"
         className="md:hidden fixed bottom-20 right-5 z-30 w-14 h-14 rounded-full
                    bg-emerald-600 hover:bg-emerald-500 text-white
                    flex items-center justify-center shadow-lg shadow-emerald-600/30
@@ -474,7 +421,7 @@ export default function DashboardPage() {
         aria-label="Agregar movimiento"
       >
         <Plus size={28} />
-      </button>
+      </Link>
     </div>
   );
 }

@@ -22,14 +22,27 @@ export type IncomeCategory =
 
 export type Category = ExpenseCategory | IncomeCategory;
 
+export type PaymentMethod = 'efectivo' | 'tarjeta' | 'banco' | 'mercado_pago';
+
 export interface Transaction {
   id: string;
   tipo: TransactionType;
   importe: number;
   categoria: Category;
   descripcion: string;
-  fecha: string; // ISO date string YYYY-MM-DD
+  fecha: string;
+  metodo_pago?: PaymentMethod;
+  es_recurrente?: boolean;
   created_at: string;
+}
+
+export interface Goal {
+  id: string;
+  nombre: string;
+  monto_objetivo: number;
+  monto_actual: number;
+  emoji: string;
+  fecha_limite?: string;
 }
 
 export type AppMode = 'presupuesto' | 'movimientos';
