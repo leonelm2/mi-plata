@@ -39,6 +39,15 @@ export function useAuth() {
     }
   }, []);
 
+  const loginWithGoogle = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      return await AuthService.signInWithGoogle();
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const register = useCallback(async (email: string, pass: string, nombre?: string, moneda?: string) => {
     setIsLoading(true);
     try {
@@ -74,6 +83,7 @@ export function useAuth() {
     session,
     isLoading,
     login,
+    loginWithGoogle,
     register,
     logout,
     resetPassword,

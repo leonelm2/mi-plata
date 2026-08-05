@@ -18,6 +18,7 @@ interface AppContextType {
   userEmail: string | null;
   userId: string | null;
   login: (email: string, pass: string) => Promise<any>;
+  loginWithGoogle: () => Promise<any>;
   register: (email: string, pass: string, nombre?: string, moneda?: string) => Promise<any>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<any>;
@@ -29,7 +30,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, userId, userEmail, login, register, logout, resetPassword, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, userId, userEmail, login, loginWithGoogle, register, logout, resetPassword, isLoading: authLoading } = useAuth();
   const { transactions, addTransaction, updateTransaction, deleteTransaction, isLoading: txLoading } = useTransactions(userId);
   const { profile, updateProfile, isLoading: profileLoading } = useProfile(userId);
   const { theme, toggleTheme } = useTheme();
@@ -53,6 +54,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         userEmail,
         userId,
         login,
+        loginWithGoogle,
         register,
         logout,
         resetPassword,
