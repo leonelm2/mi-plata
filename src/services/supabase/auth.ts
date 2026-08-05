@@ -8,13 +8,14 @@ export interface AuthState {
 }
 
 export const AuthService = {
-  async signUp(email: string, password: string, nombre?: string) {
+  async signUp(email: string, password: string, nombre?: string, moneda: string = 'ARS') {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           nombre: nombre || email.split('@')[0],
+          moneda,
         },
       },
     });

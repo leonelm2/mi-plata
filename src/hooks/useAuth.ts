@@ -8,7 +8,6 @@ export function useAuth() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Initial session check
     AuthService.getSession().then((sess) => {
       setSession(sess);
       setUser(sess?.user ?? null);
@@ -17,7 +16,6 @@ export function useAuth() {
       setIsLoading(false);
     });
 
-    // Listen to real-time auth changes (Sign In, Sign Out, Token Refresh)
     const { data: listener } = AuthService.onAuthStateChange((currUser, currSession) => {
       setUser(currUser);
       setSession(currSession);
@@ -41,10 +39,10 @@ export function useAuth() {
     }
   }, []);
 
-  const register = useCallback(async (email: string, pass: string, nombre?: string) => {
+  const register = useCallback(async (email: string, pass: string, nombre?: string, moneda?: string) => {
     setIsLoading(true);
     try {
-      const data = await AuthService.signUp(email, pass, nombre);
+      const data = await AuthService.signUp(email, pass, nombre, moneda);
       setUser(data.user);
       setSession(data.session);
       return data;

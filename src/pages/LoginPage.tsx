@@ -1,10 +1,31 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, ArrowRight, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, ShieldCheck, RefreshCw, Globe } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../context/ToastContext';
 
 type AuthMode = 'login' | 'register' | 'recovery';
+
+interface CountryOption {
+  code: string;
+  name: string;
+  flag: string;
+  currency: string;
+  symbol: string;
+}
+
+const SOUTH_AMERICAN_COUNTRIES: CountryOption[] = [
+  { code: 'AR', name: 'Argentina', flag: '🇦🇷', currency: 'ARS', symbol: '$' },
+  { code: 'BR', name: 'Brasil', flag: '🇧🇷', currency: 'BRL', symbol: 'R$' },
+  { code: 'CL', name: 'Chile', flag: '🇨🇱', currency: 'CLP', symbol: '$' },
+  { code: 'CO', name: 'Colombia', flag: '🇨🇴', currency: 'COP', symbol: '$' },
+  { code: 'EC', name: 'Ecuador', flag: '🇪🇨', currency: 'USD', symbol: '$' },
+  { code: 'PE', name: 'Perú', flag: '🇵🇪', currency: 'PEN', symbol: 'S/' },
+  { code: 'UY', name: 'Uruguay', flag: '🇺🇾', currency: 'UYU', symbol: '$U' },
+  { code: 'PY', name: 'Paraguay', flag: '🇵🇾', currency: 'PYG', symbol: '₲' },
+  { code: 'BO', name: 'Bolivia', flag: '🇧🇴', currency: 'BOB', symbol: 'Bs.' },
+  { code: 'VE', name: 'Venezuela', flag: '🇻🇪', currency: 'VES', symbol: 'Bs.' },
+];
 
 export default function LoginPage() {
   const { login, register, resetPassword } = useApp();
@@ -16,6 +37,7 @@ export default function LoginPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState<CountryOption>(SOUTH_AMERICAN_COUNTRIES[0]);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,8 +60,8 @@ export default function LoginPage() {
           setIsLoading(false);
           return;
         }
-        await register(email, password, name);
-        showToast(`¡Cuenta creada con éxito! Bienvenido ${name} 🎉`, 'success');
+        await register(email, password, name, selectedCountry.currency);
+        showToast(`¡Cuenta creada con éxito en ${selectedCountry.flag}! Bienvenido ${name} 🎉`, 'success');
         navigate('/');
       } else {
         if (!password) {
@@ -72,10 +94,10 @@ export default function LoginPage() {
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Mi Plata</h1>
           <p className="text-xs text-slate-400 max-w-xs mx-auto">
             {mode === 'register'
-              ? 'Creá tu cuenta en segundos y sincronizá tus datos en la nube.'
+              ? 'Seleccioná tu país sudamericano y comenzá con tu moneda local.'
               : mode === 'recovery'
               ? 'Ingresá tu email para restablecer tu contraseña.'
-              : 'Controlá tus finanzas personales con Supabase Cloud.'}
+              : 'Controlá tus finanzas personales de forma simple y elegante.'}
           </p>
         </div>
 
@@ -108,6 +130,33 @@ export default function LoginPage() {
 
         <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5">
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Country Selector (Only on Register) */}
+            {mode === 'register' && (
+              <div className="space-y-1.5 animate-fade-in">
+                <label className="text-xs font-semibold text-slate-300 tracking-wide uppercase">
+                  País (Sudamérica)
+                </label>
+                <div className="relative">
+                  <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                  <select
+                    value={selectedCountry.code}
+                    onChange={(e) => {
+                      const found = SOUTH_AMERICAN_COUNTRIES.find((c) => c.code === e.target.value);
+                      if (found) setSelectedCountry(found);
+                    }}
+                    className="w-full pl-11 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-slate-100 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all appearance-none cursor-pointer"
+                  >
+                    {SOUTH_AMERICAN_COUNTRIES.map((c) => (
+                      <option key={c.code} value={c.code} className="bg-slate-900 text-white">
+                        {c.flag} {c.name} ({c.currency} - {c.symbol})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* Name Field (Only on Register) */}
             {mode === 'register' && (
               <div className="space-y-1.5 animate-fade-in">
                 <label className="text-xs font-semibold text-slate-300 tracking-wide uppercase">
@@ -127,6 +176,7 @@ export default function LoginPage() {
               </div>
             )}
 
+            {/* Email Field */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-300 tracking-wide uppercase">
                 Correo Electrónico
@@ -144,6 +194,7 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {/* Password Field */}
             {mode !== 'recovery' && (
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
@@ -185,7 +236,7 @@ export default function LoginPage() {
                 <>
                   <span>
                     {mode === 'register'
-                      ? 'Crear Cuenta en Supabase'
+                      ? `Registrarme (${selectedCountry.flag} ${selectedCountry.currency})`
                       : mode === 'recovery'
                       ? 'Recuperar Contraseña'
                       : 'Iniciar Sesión'}

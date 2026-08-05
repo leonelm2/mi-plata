@@ -18,7 +18,7 @@ interface AppContextType {
   userEmail: string | null;
   userId: string | null;
   login: (email: string, pass: string) => Promise<any>;
-  register: (email: string, pass: string, nombre?: string) => Promise<any>;
+  register: (email: string, pass: string, nombre?: string, moneda?: string) => Promise<any>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<any>;
   isLoading: boolean;
